@@ -7,8 +7,9 @@ the folder will now contain all the images in reduced webp format, alongside the
 the code in this state will not work in your pc due to the lack of the original images folder, however you can try it with your own images:
 
 1. leave a folder named "images" within the same directory as the folder "plush" (i.e: C:/Users/Downloads/images and C:/Users/Downloads/plush)
-2. in a console type "  python -m pip install -r requirements.txt  " in order to download Pillow extension
-3. the code will now properly work, you can use the same console as before typing "  python compress.py  " or through an IDE like Vscode to run it
+2. open a console tab and find the directory of the "plush" folder, alternatively you can use an IDE like Vscode to run it
+3. in the cmd type "  python -m pip install -r requirements.txt  " in order to download the Pillow extension
+4. the code will now properly work, you can use the same console as before typing "  python compress.py  "
 
 notes: 
 every time the code is executed, it will replace the previous zip file in this folder
