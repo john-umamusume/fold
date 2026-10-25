@@ -1,0 +1,23 @@
+v9 update
+
+webp conversion
+
+the folder will now contain all the images in reduced webp format, alongside the python compress.py code used with requirements.txt
+
+the code in this state will not work in your pc due to the lack of the original images folder, however you can try it with your own images:
+
+1. leave a folder named "images" within the same directory as the folder "plush" (i.e: C:/Users/Downloads/images and C:/Users/Downloads/plush)
+2. in a console type "  python -m pip install -r requirements.txt  " in order to download Pillow extension
+3. the code will now properly work, you can use the same console as before typing "  python compress.py  " or through an IDE like Vscode to run it
+
+notes: 
+every time the code is executed, it will replace the previous zip file in this folder
+before trying with your own, remember to save somewhere else the current zip file in this repository
+the python code will not modify any of your files, it only creates the compressed one
+webp images in your folder will not be recompressed
+compressed images may have reduced visual quality due to obvious reasons
+
+i dont even know why im doing this
+
+
+yea
