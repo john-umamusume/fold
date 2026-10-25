@@ -2,7 +2,10 @@ v9 update
 
 webp conversion
 
-the folder will now contain all the images in reduced webp format, alongside the python compress.py code used with requirements.txt
+the folder will now contain all the images in reduced webp format, alongside the python compress.py and decompress.py codes used with requirements.txt
+
+optional: 
+due to the webp format being able to cause some issues with specific software, the decompress.py will read the zip file and restore the images to its original format, may increase storage usage
 
 the code in this state will not work in your pc due to the lack of the original images folder, however you can try it with your own images:
 
