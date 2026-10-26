@@ -23,12 +23,13 @@ start_time = time.time()
 total_original = 0
 total_webp = 0
 converted_files = 0
-preserved_files = 0
 failed_files = 0
 archived_files = 0
 
-# Step 1: Convert images and write them directly to the ZIP archive.
+# Step 1: Convert all images to WebP and write them to the ZIP.
 print("Starting image compression...")
+
+used_paths = set()
 
 with ZipFile(
     ZIP_FILE,
@@ -37,76 +38,74 @@ with ZipFile(
     compresslevel=9
 ) as archive:
 
-    for source_file in SOURCE_DIR.rglob("*"):
+    for source_file in sorted(SOURCE_DIR.rglob("*")):
         if not source_file.is_file():
             continue
 
         relative_path = source_file.relative_to(SOURCE_DIR)
-        extension = source_file.suffix.lower()
         original_size = source_file.stat().st_size
 
-        # Preserve existing WebP files without recompressing them.
-        if extension == ".webp":
-            output_path = relative_path
-            webp_data = source_file.read_bytes()
-            preserved_files += 1
+        try:
+            # Open the source image and correct its orientation.
+            with Image.open(source_file) as image:
+                image = ImageOps.exif_transpose(image)
 
-        else:
-            # Include the original extension to avoid filename collisions.
-            output_name = (
-                f"{source_file.stem}_{extension.lstrip('.')}.webp"
+                # Preserve transparency when converting to WebP.
+                if (
+                    "A" in image.getbands()
+                    or "transparency" in image.info
+                ):
+                    image = image.convert("RGBA")
+                else:
+                    image = image.convert("RGB")
+
+                # Convert the image in memory.
+                buffer = BytesIO()
+                image.save(
+                    buffer,
+                    format="WEBP",
+                    quality=QUALITY,
+                    method=METHOD
+                )
+                webp_data = buffer.getvalue()
+
+            # Remove the original extension from the output name.
+            output_path = relative_path.with_suffix(".webp")
+
+            # Prevent duplicate names within the same directory.
+            counter = 2
+            while output_path.as_posix().lower() in used_paths:
+                output_path = (
+                    relative_path.parent
+                    / f"{relative_path.stem}_{counter}.webp"
+                )
+                counter += 1
+
+            used_paths.add(output_path.as_posix().lower())
+
+            # Write the converted image directly to the ZIP.
+            archive.writestr(output_path.as_posix(), webp_data)
+
+            total_original += original_size
+            total_webp += len(webp_data)
+            converted_files += 1
+            archived_files += 1
+
+            reduction = (
+                (1 - len(webp_data) / original_size) * 100
+                if original_size else 0
             )
-            output_path = relative_path.parent / output_name
 
-            try:
-                # Convert the image in memory without creating a folder.
-                with Image.open(source_file) as image:
-                    image = ImageOps.exif_transpose(image)
+            print(
+                f"Processed: {relative_path} | "
+                f"{original_size / 1024:.1f} KB -> "
+                f"{len(webp_data) / 1024:.1f} KB | "
+                f"{reduction:.1f}% reduction"
+            )
 
-                    if (
-                        "A" in image.getbands()
-                        or "transparency" in image.info
-                    ):
-                        image = image.convert("RGBA")
-                    else:
-                        image = image.convert("RGB")
-
-                    buffer = BytesIO()
-
-                    image.save(
-                        buffer,
-                        format="WEBP",
-                        quality=QUALITY,
-                        method=METHOD
-                    )
-
-                    webp_data = buffer.getvalue()
-
-                converted_files += 1
-
-            except Exception as error:
-                failed_files += 1
-                print(f"Failed: {relative_path} | {error}")
-                continue
-
-        # Write the image directly into the ZIP archive.
-        archive.writestr(output_path.as_posix(), webp_data)
-
-        total_original += original_size
-        total_webp += len(webp_data)
-        archived_files += 1
-
-        reduction = (
-            (1 - len(webp_data) / original_size) * 100
-            if original_size else 0
-        )
-
-        print(
-            f"Processed: {relative_path} | "
-            f"{original_size / 1024:.1f} KB -> "
-            f"{len(webp_data) / 1024:.1f} KB | "
-            f"{reduction:.1f}% reduction"
-        )
+        except Exception as error:
+            failed_files += 1
+            print(f"Failed: {relative_path} | {error}")
 
 # Step 2: Verify the generated ZIP archive.
 print("\nVerifying ZIP archive...")
@@ -130,7 +129,6 @@ elapsed_time = time.time() - start_time
 # Step 3: Display the final results.
 print("\nCompression completed.")
 print(f"Files converted: {converted_files}")
-print(f"Existing WebP files preserved: {preserved_files}")
 print(f"Files failed: {failed_files}")
 print(f"Files archived: {archived_files}")
 print(f"Files in ZIP: {archive_count}")
